@@ -29,7 +29,7 @@ class Game:
         self.__region_list[14].set_desert()
         self.__region_list[0].set_cannot_buy()
 
-        self.__current_turn = 1  # 현재 턴 수
+        self.__current_turn = 1  # current turn number
         self.__current_player_no = 0
 
         self.__dices_list = [dice.Dice(), dice.Dice()]
@@ -78,14 +78,14 @@ class Game:
         self.__timer_label.config(text=format_time(self.__elapsed_time))
         self.__main_view.after(1000, self.update_timer)
 
-    # 게임을 재시작한다.
+    # reset game
     def reset(self):
-        # 플레이어 정보 초기화
+        # reset player information
         for _player in self.__player_list:
             assert isinstance(_player, player.Player)
             _player.reset()
 
-        # 땅의 정보 초기화
+        # reset region information
         for _region in self.__region_list:
             assert isinstance(_region, region.Region)
             _region.reset()
@@ -103,30 +103,31 @@ class Game:
         self.__main_view.map_canvas.itemconfig(self.__display_current_player, text="%s turn" % self.__player_list[0].get_player_name())
         self.__main_view.map_canvas.itemconfig(self.__display_current_player, fill=self.__player_list[0].get_color())
 
-    # 주사위 2개를 던져서 나온 눈의 수를 tuple 형태로 리턴한다. 여기에서 주사위 이미지를 업데이트 하도록 한다.
+    # get dice numbers with random. and return dice numbers with tuple. 
+    # Here updates dice image
     def roll_dice(self):
         (dice1, dice2) = (random.randint(1, 6), random.randint(1, 6))
         self.__dices_list[0].update_dice_num(dice1)
         self.__dices_list[1].update_dice_num(dice2)
         return dice1, dice2
 
-    # 한 플레이어가 한 턴 동안 하는 일. 주사위를 던져서 이동하고, 지역을 구매하는 것까지 포함한다.
+    # player's work in one turn. include rolling the dice, moving and buying region
     def player_move(self, _player: player.Player):
-        dice1, dice2 = self.roll_dice()  # 주사위를 던진다.
+        dice1, dice2 = self.roll_dice() # roll the dice
         print(dice1, dice2)
-        current_region = self.__region_list[_player.move(dice1, dice2)]  # 현재 _player 가 있는 지역
-        assert isinstance(current_region, region.Region)  # 적절한 값인지 체크
-        _type = current_region.get_buy_type(_player.get_id())  # 구매 타입을 정한다. constant.py 에 있는 내용 참조.
+        current_region = self.__region_list[_player.move(dice1, dice2)]  # player's current position
+        assert isinstance(current_region, region.Region)  # check if current_region is Region class
+        _type = current_region.get_buy_type(_player.get_id())  # with values in constant.py, set purchase type
         if current_region.is_desert() and not _player.check_desert():
             _player.set_stop()
             messagebox.showerror("Desert", "You are in desert!")
-        # 통행료 지급하는 부분
+        # pay toll when the region is owned by other player.
         if _player.get_id() != current_region.get_owner_id() and current_region.get_owner_id() is not None:
             _toll = current_region.get_toll()
             _player.pay_money(_toll, current_region.get_owner())
             print("%s gave $%d money to %s"
                   % (_player.get_player_name(), _toll, current_region.get_owner().get_player_name()))
-        # 지역 구매 여부 묻기
+        # ask whether buy the region or not
         current_region_price = current_region.get_sales_price(_player.get_id())
         if _player.get_current_money() >= current_region_price and current_region.can_buy():
             want_to_buy = messagebox.askyesno("Buy", constant.ASK_BUY_MESSAGE[_type] % current_region_price)
@@ -138,8 +139,8 @@ class Game:
             messagebox.showinfo("Double", "Your dices ar Double!")
         return dice1, dice2
 
-    # 모든 플레이어가 한 턴 동안 하는 일.
-    # 게임이 끝나지 않는 경우에는 None 을 리턴하고, 누군가가 파산해서 게임이 끝나는 경우에는 파산한 플레이어의 id 를 리턴한다.
+    # every works in one turn
+     # if game is not over, return none. when someone is bankrupt, return bankrupt player id
     def one_turn(self):
         _player = self.__player_list[self.__current_player_no]
         self.player_move(_player)
@@ -159,7 +160,7 @@ class Game:
 
         return None
 
-    # 하나의 게임을 시행한다.
+    # process a game
     def play(self):
         if not self.__timer_on:
             self.__timer_on = True
@@ -172,7 +173,7 @@ class Game:
         result = self.one_turn()
         self.dice_button.config(state=tk.NORMAL)
         self.reset_button.config(state=tk.NORMAL)
-        # 게임이 종료되었을 경우 이전 게임에 대한 내용을 모두 초기화한다.
+        # when game is over, initialize all previous game information
         if result is not None:
             assert isinstance(result, player.Player)
             print("%s is bankrupt!" % result.get_player_name())
@@ -247,7 +248,7 @@ def start_game(players_name):
 
     region_price_list = [0, 500, 1600, 2100, 1500, 800, 1800, 1000, 2000, 1400, 1200, 2500, 1200, 1500, 800, 1500, 2200,
                      1300, 1800, 800, 2000, 1200, 900, 1100, 2100, 1300, 1600, 2700]
-    # 지역이름과 가격으로 리스트 작성
+    # make list with region name and price
     main_view = MainView()
 
     regions_info = [(region_name_list[i], region_price_list[i]) for i in range(constant.TOTAL_REGIONS)]
